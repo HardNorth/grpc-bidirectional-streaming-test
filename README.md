@@ -1,1 +1,1 @@
-# grpc-bidirectionsl-streaming-test
+# grpc-bidirectional-streaming-test
