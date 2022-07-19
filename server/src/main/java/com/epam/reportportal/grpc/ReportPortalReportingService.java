@@ -37,40 +37,54 @@ public class ReportPortalReportingService implements ReportPortalReporting {
 		}
 
 		return Uni.createFrom()
-				.item(() -> OperationCompletionRS.newBuilder()
-						.setUuid(request.getUuid())
-						.setMessage("OK")
-						.build());
+				.item(() -> OperationCompletionRS.newBuilder().setUuid(request.getUuid()).setMessage("OK").build());
 	}
 
 	@Override
 	public Multi<ItemCreatedRS> startTestItem(Multi<StartTestItemRQ> request) {
-		request.subscribe().with(rq -> {
+		return Multi.createFrom().emitter(c -> request.subscribe().with(rq -> {
 			try {
 				Thread.sleep(new Random().nextInt(200));
 			} catch (InterruptedException e) {
-				throw new RuntimeException(e);
+				c.fail(e);
 			}
-			return Uni.createFrom()
-					.item(() -> ItemCreatedRS.newBuilder()
-							.setUuid(rq.getUuid())
-							.setMessage("OK")
-							.build());
-		});
+			c.emit(ItemCreatedRS.newBuilder().setUuid(rq.getUuid()).setMessage("OK").build());
+		}));
 	}
 
 	@Override
 	public Multi<OperationCompletionRS> finishTestItem(Multi<FinishTestItemRQ> request) {
-		return null;
+		return Multi.createFrom().emitter(c -> request.subscribe().with(rq -> {
+			try {
+				Thread.sleep(new Random().nextInt(20));
+			} catch (InterruptedException e) {
+				c.fail(e);
+			}
+			c.emit(OperationCompletionRS.newBuilder().setUuid(rq.getUuid()).setMessage("OK").build());
+		}));
 	}
 
 	@Override
 	public Multi<ItemCreatedRS> startNestedItem(Multi<StartNestedItemRQ> request) {
-		return null;
+		return Multi.createFrom().emitter(c -> request.subscribe().with(rq -> {
+			try {
+				Thread.sleep(new Random().nextInt(200));
+			} catch (InterruptedException e) {
+				c.fail(e);
+			}
+			c.emit(ItemCreatedRS.newBuilder().setUuid(rq.getUuid()).setMessage("OK").build());
+		}));
 	}
 
 	@Override
 	public Multi<OperationCompletionRS> finishNestedItem(Multi<FinishNestedItemRQ> request) {
-		return null;
+		return Multi.createFrom().emitter(c -> request.subscribe().with(rq -> {
+			try {
+				Thread.sleep(new Random().nextInt(20));
+			} catch (InterruptedException e) {
+				c.fail(e);
+			}
+			c.emit(OperationCompletionRS.newBuilder().setUuid(rq.getUuid()).setMessage("OK").build());
+		}));
 	}
 }
