@@ -33,9 +33,8 @@ public class ReportPortalReportingApp {
 		@Override
 		public void run() {
 			try {
-				Thread.sleep(100);
 				T item;
-				while (running && (item = queue.poll(10, TimeUnit.MILLISECONDS)) != null) {
+				while (running && (item = queue.poll(200, TimeUnit.MILLISECONDS)) != null) {
 					for (Subscriber<? super T> s : subscribers) {
 						s.onNext(item);
 					}
