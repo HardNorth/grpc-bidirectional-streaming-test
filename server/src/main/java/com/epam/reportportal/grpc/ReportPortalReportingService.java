@@ -80,22 +80,4 @@ public class ReportPortalReportingService implements ReportPortalReporting {
 			executorService.submit(task);
 		}));
 	}
-
-	@Override
-	public Multi<ItemCreatedRS> startNestedItem(Multi<StartNestedItemRQ> request) {
-		return Multi.createFrom().emitter(c -> request.subscribe().with(rq -> {
-			var uuid = rq.getUuid();
-			Runnable task = createJob(ItemCreatedRS.newBuilder().setUuid(uuid).setMessage("OK").build(), c);
-			executorService.submit(task);
-		}));
-	}
-
-	@Override
-	public Multi<OperationCompletionRS> finishNestedItem(Multi<FinishNestedItemRQ> request) {
-		return Multi.createFrom().emitter(c -> request.subscribe().with(rq -> {
-			var uuid = rq.getUuid();
-			Runnable task = createJob(OperationCompletionRS.newBuilder().setUuid(uuid).setMessage("OK").build(), c);
-			executorService.submit(task);
-		}));
-	}
 }

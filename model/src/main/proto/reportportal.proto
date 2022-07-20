@@ -12,8 +12,6 @@ service ReportPortalReporting {
     rpc FinishLaunch(FinishExecutionRQ) returns (OperationCompletionRS) {}
     rpc StartTestItem (stream StartTestItemRQ) returns (stream ItemCreatedRS) {}
     rpc FinishTestItem(stream FinishTestItemRQ) returns (stream OperationCompletionRS) {}
-    rpc StartNestedItem (stream StartNestedItemRQ) returns (stream ItemCreatedRS) {}
-    rpc FinishNestedItem (stream FinishNestedItemRQ) returns (stream OperationCompletionRS) {}
 }
 
 message StartLaunchRQ {
@@ -65,16 +63,6 @@ enum ItemStatus {
 }
 
 message FinishTestItemRQ {
-    string uuid = 1;
-    ItemStatus status = 2;
-}
-
-message StartNestedItemRQ {
-    string uuid = 1;
-    string parent = 2;
-}
-
-message FinishNestedItemRQ {
     string uuid = 1;
     ItemStatus status = 2;
 }
