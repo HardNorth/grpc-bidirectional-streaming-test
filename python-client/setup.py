@@ -4,10 +4,11 @@ from setuptools import setup, find_packages
 from setuptools.command.develop import develop
 from setuptools.command.install import install
 
-GRPC_GENERATION_SCRIPT = "python -m grpc_tools.protoc -I./proto " \
-                         "--python_out=./reportportal_grpc_client " \
-                         "--grpc_python_out=./reportportal_grpc_client/grpc " \
-                         "./proto/reportportal.proto"
+GRPC_GENERATION_SCRIPT = \
+    "python -m grpc_tools.protoc -I./proto " \
+    "--python_out=./reportportal_grpc_client/model " \
+    "--grpc_python_out=./reportportal_grpc_client/client " \
+    "./proto/reportportal.proto"
 
 
 class PreDevelopCommand(develop):
