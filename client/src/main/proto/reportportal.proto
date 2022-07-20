@@ -1,0 +1,68 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.epam.reportportal.grpc.model";
+option java_outer_classname = "ReportPortalProto";
+option objc_class_prefix = "RPP";
+
+package com.epam.reportportal.grpc.model;
+
+service ReportPortalReporting {
+    rpc StartLaunch (StartLaunchRQ) returns (StartLaunchRS) {}
+    rpc FinishLaunch(FinishExecutionRQ) returns (OperationCompletionRS) {}
+    rpc StartTestItem (stream StartTestItemRQ) returns (stream ItemCreatedRS) {}
+    rpc FinishTestItem(stream FinishTestItemRQ) returns (stream OperationCompletionRS) {}
+}
+
+message StartLaunchRQ {
+    string name = 1;
+    string uuid = 2;
+}
+
+message StartLaunchRS {
+    string uuid = 1;
+    string message = 2;
+    sint64 number = 3;
+}
+
+message FinishExecutionRQ {
+    string uuid = 1;
+}
+
+message OperationCompletionRS {
+    string uuid = 1;
+    string message = 2;
+}
+
+message PathElement {
+    string name = 1;
+    PathElementType type = 2;
+}
+
+enum PathElementType {
+    SUITE = 0;
+    SCENARIO = 1;
+    FEATURE = 2;
+    TEST = 3;
+}
+
+message StartTestItemRQ {
+    string uuid = 1;
+    repeated PathElement path = 2;
+}
+
+message ItemCreatedRS {
+    string uuid = 1;
+    string message = 2;
+}
+
+enum ItemStatus {
+    PASSED = 0;
+    FAILED = 1;
+    SKIPPED = 2;
+}
+
+message FinishTestItemRQ {
+    string uuid = 1;
+    ItemStatus status = 2;
+}

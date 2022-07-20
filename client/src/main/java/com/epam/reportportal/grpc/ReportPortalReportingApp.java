@@ -126,7 +126,7 @@ public class ReportPortalReportingApp {
 						.build());
 			}
 
-			Thread.sleep(10000);
+			Thread.sleep(9000);
 
 			Cancellable finishLaunchSubscriber = rpService.finishLaunch(FinishExecutionRQ.newBuilder()
 					.setUuid(launchUuid)
