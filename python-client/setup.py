@@ -6,8 +6,9 @@ from setuptools.command.install import install
 
 GRPC_GENERATION_SCRIPT = \
     "python -m grpc_tools.protoc -I./proto " \
-    "--python_out=./reportportal_grpc_client/model " \
+    "--python_out=./reportportal_grpc_client/client " \
     "--grpc_python_out=./reportportal_grpc_client/client " \
+    "--proto_path=./reportportal_grpc_client/client" \
     "./proto/reportportal.proto"
 
 
