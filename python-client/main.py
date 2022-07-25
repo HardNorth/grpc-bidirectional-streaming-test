@@ -1,4 +1,5 @@
 import time
+import threading
 import logging
 import uuid
 from queue import Queue, Empty
@@ -12,6 +13,25 @@ IS_RUNNING = True
 
 START_ITEM_QUEUE = Queue()
 FINISH_ITEM_QUEUE = Queue()
+
+
+class Worker(threading.Thread):
+
+    def __init__(self, generator, message):
+        super().__init__()
+        self.generator = generator
+        self.message = message
+
+    def run(self):
+        try:
+            for item in self.generator:
+                print(self.message + item.uuid)
+        except grpc.RpcError as exc:
+            code = exc.code()
+            if code is grpc.StatusCode.CANCELLED:
+                print("Computation finished with: " + exc.details())
+            else:
+                print("ERROR: " + str(exc))
 
 
 def start_test_item_gen():
@@ -45,6 +65,11 @@ def run():
         item_finish_rs_stream = stub.FinishTestItem(finish_test_item_gen(),
                                                     wait_for_ready=True)
 
+        start_rs_worker = Worker(item_start_rs_stream, "Item started: ")
+        finish_rs_worker = Worker(item_finish_rs_stream, "Item finished: ")
+        start_rs_worker.start()
+        finish_rs_worker.start()
+
         for i in range(50):
             item_uuid = str(i) + "-" + str(uuid.uuid4())
             reportportal_pb2.StartTestItemRQ(uuid=item_uuid)
@@ -54,22 +79,20 @@ def run():
                 reportportal_pb2.FinishTestItemRQ(
                     uuid=item_uuid, status=reportportal_pb2.PASSED))
 
-        for start_rs in item_start_rs_stream:
-            print("Item started: " + start_rs.uuid)
-
-        for finish_rs in item_finish_rs_stream:
-            print("Item finished: " + finish_rs.uuid)
-
         finish_launch_rq = reportportal_pb2.FinishExecutionRQ(uuid=launch_uuid)
         launch_finish_rs = stub.FinishLaunch(finish_launch_rq)
         print('Launch finished: ' + launch_finish_rs.uuid)
 
         global IS_RUNNING
         IS_RUNNING = False
-        item_start_rs_stream.cancel()
-        item_finish_rs_stream.cancel()
+
+        time.sleep(0.3)
+
+        item_start_rs_stream.done()
+        item_finish_rs_stream.done()
 
 
 if __name__ == '__main__':
     logging.basicConfig()
     run()
+    print("Finishing the test")
