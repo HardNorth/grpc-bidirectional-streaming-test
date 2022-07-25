@@ -83,13 +83,10 @@ def run():
         launch_finish_rs = stub.FinishLaunch(finish_launch_rq)
         print('Launch finished: ' + launch_finish_rs.uuid)
 
+        time.sleep(0.5)
+
         global IS_RUNNING
         IS_RUNNING = False
-
-        time.sleep(0.3)
-
-        item_start_rs_stream.done()
-        item_finish_rs_stream.done()
 
 
 if __name__ == '__main__':
