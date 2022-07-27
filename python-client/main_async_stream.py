@@ -1,9 +1,9 @@
 import asyncio
 import logging
 import queue
+import threading
 import time
 import uuid
-from threading import Thread
 
 import grpc
 
@@ -61,8 +61,9 @@ class ReportPortalClient:
         self.is_running = False
         self.url = url
         self.loop = asyncio.get_event_loop()
-        self.thread = Thread(target=self.loop.run_forever, name='Async-Report',
-                             daemon=True)
+        self.thread = threading.Thread(target=self.loop.run_forever,
+                                       name='Async-Report',
+                                       daemon=True)
         self.item_start_tracker = ResponseTracker()
         self.item_finish_tracker = ResponseTracker()
         self.task_queue = queue.Queue()
@@ -198,6 +199,7 @@ def run(item_number):
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
     start_time = time.time()
-    run(50000)
+    run(500)
     logger.info('Finishing the test. Took: {} seconds'.format(
         time.time() - start_time))
+    logger.info('Total thread number: ' + str(len(threading.enumerate())))
