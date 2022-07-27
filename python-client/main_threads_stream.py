@@ -14,6 +14,8 @@ IS_RUNNING = True
 START_ITEM_QUEUE = Queue()
 FINISH_ITEM_QUEUE = Queue()
 
+logger = logging.getLogger(__name__)
+
 
 class ResponseTracker:
 
@@ -40,14 +42,14 @@ def process_incoming_messages(generator, message, tracker):
     try:
         for item in generator:
             item_uuid = item.uuid
-            print(message + item.uuid)
+            logger.debug(message + item.uuid)
             tracker.acknowledge(item_uuid)
     except grpc.RpcError as exc:
         code = exc.code()
         if code is grpc.StatusCode.CANCELLED:
-            print("Computation finished with: " + exc.details())
+            logger.debug("Computation finished with: " + exc.details())
         else:
-            print("ERROR: " + str(exc))
+            logger.debug("ERROR: " + str(exc))
 
 
 def start_test_item_gen():
@@ -73,7 +75,7 @@ def run(item_number):
         start_launch_rq = reportportal_pb2.StartLaunchRQ(uuid=launch_uuid,
                                                          name='Test Launch')
         launch_start_rs = stub.StartLaunch(start_launch_rq)
-        print('Launch started: ' + launch_start_rs.uuid)
+        logger.debug('Launch started: ' + launch_start_rs.uuid)
 
         item_start_rs_stream = stub.StartTestItem(start_test_item_gen(),
                                                   wait_for_ready=True)
@@ -107,7 +109,7 @@ def run(item_number):
 
         finish_launch_rq = reportportal_pb2.FinishExecutionRQ(uuid=launch_uuid)
         launch_finish_rs = stub.FinishLaunch(finish_launch_rq)
-        print('Launch finished: ' + launch_finish_rs.uuid)
+        logger.debug('Launch finished: ' + launch_finish_rs.uuid)
 
         while start_rs_tracker.size() > 0 and finish_rs_tracker.size() > 0:
             time.sleep(0.1)
@@ -117,8 +119,8 @@ def run(item_number):
 
 
 if __name__ == '__main__':
-    logging.basicConfig()
+    logging.basicConfig(level=logging.INFO)
     start_time = time.time()
-    run(5000)
-    print('Finishing the test. Took: {} seconds'.format(
+    run(50000)
+    logger.info('Finishing the test. Took: {} seconds'.format(
         time.time() - start_time))

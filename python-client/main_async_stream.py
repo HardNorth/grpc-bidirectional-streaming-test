@@ -198,6 +198,6 @@ def run(item_number):
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
     start_time = time.time()
-    run(5000)
+    run(50000)
     logger.info('Finishing the test. Took: {} seconds'.format(
         time.time() - start_time))
