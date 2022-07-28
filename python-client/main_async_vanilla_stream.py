@@ -145,7 +145,7 @@ async def run(item_number):
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
     start_time = time.time()
-    asyncio.run(run(500))
+    asyncio.run(run(50000))
     logger.info('Finishing the test. Took: {} seconds'.format(
         time.time() - start_time))
     logger.info('Total thread number: ' + str(len(threading.enumerate())))
