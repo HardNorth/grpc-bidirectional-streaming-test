@@ -10,8 +10,10 @@ package com.epam.reportportal.grpc.model;
 service ReportPortalReporting {
     rpc StartLaunch (StartLaunchRQ) returns (StartLaunchRS) {}
     rpc FinishLaunch(FinishExecutionRQ) returns (OperationCompletionRS) {}
-    rpc StartTestItem (stream StartTestItemRQ) returns (stream ItemCreatedRS) {}
-    rpc FinishTestItem(stream FinishTestItemRQ) returns (stream OperationCompletionRS) {}
+    rpc StartTestItemStream (stream StartTestItemRQ) returns (stream ItemCreatedRS) {}
+    rpc FinishTestItemStream(stream FinishTestItemRQ) returns (stream OperationCompletionRS) {}
+    rpc StartTestItem (StartTestItemRQ) returns (ItemCreatedRS) {}
+    rpc FinishTestItem(FinishTestItemRQ) returns (OperationCompletionRS) {}
 }
 
 message StartLaunchRQ {

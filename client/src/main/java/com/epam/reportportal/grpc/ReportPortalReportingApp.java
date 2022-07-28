@@ -103,7 +103,7 @@ public class ReportPortalReportingApp {
 			throwable.printStackTrace();
 		}
 
-		public void run(int number) throws InterruptedException {
+		public void run(int number) {
 			System.out.println("Starting test");
 			String launchUuid = UUID.randomUUID().toString();
 			Cancellable startLaunchSubscriber = rpService.startLaunch(StartLaunchRQ.newBuilder()
@@ -113,13 +113,13 @@ public class ReportPortalReportingApp {
 
 			ThreadedPublisher<StartTestItemRQ> startPublisher = new ThreadedPublisher<>(itemStartQueue);
 			Multi<StartTestItemRQ> startEmitter = Multi.createFrom().publisher(startPublisher);
-			Cancellable startSubscriber = rpService.startTestItem(startEmitter)
+			Cancellable startSubscriber = rpService.startTestItemStream(startEmitter)
 					.subscribe()
 					.with(this::logItemStart, this::logError);
 
 			ThreadedPublisher<FinishTestItemRQ> finishPublisher = new ThreadedPublisher<>(itemFinishQueue);
 			Multi<FinishTestItemRQ> finishEmitter = Multi.createFrom().publisher(finishPublisher);
-			Cancellable finishSubscriber = rpService.finishTestItem(finishEmitter)
+			Cancellable finishSubscriber = rpService.finishTestItemStream(finishEmitter)
 					.subscribe()
 					.with(this::logCompletion, this::logError);
 

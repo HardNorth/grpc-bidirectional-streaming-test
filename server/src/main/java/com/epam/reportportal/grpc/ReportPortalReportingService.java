@@ -5,6 +5,7 @@ import io.quarkus.grpc.GrpcService;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.subscription.MultiEmitter;
+import io.smallrye.mutiny.subscription.UniEmitter;
 
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
@@ -52,6 +53,17 @@ public class ReportPortalReportingService implements ReportPortalReporting {
 				.item(() -> OperationCompletionRS.newBuilder().setUuid(request.getUuid()).setMessage("OK").build());
 	}
 
+	private static <T> Runnable createJob(T response, UniEmitter<? super T> emitter) {
+		return () -> {
+			try {
+				Thread.sleep(new Random().nextInt(200));
+			} catch (InterruptedException e) {
+				emitter.fail(e);
+			}
+			emitter.complete(response);
+		};
+	}
+
 	private static <T> Runnable createJob(T response, MultiEmitter<? super T> emitter) {
 		return () -> {
 			try {
@@ -64,7 +76,25 @@ public class ReportPortalReportingService implements ReportPortalReporting {
 	}
 
 	@Override
-	public Multi<ItemCreatedRS> startTestItem(Multi<StartTestItemRQ> request) {
+	public Uni<ItemCreatedRS> startTestItem(StartTestItemRQ request) {
+		return Uni.createFrom().emitter(c->{
+			var uuid = request.getUuid();
+			Runnable task = createJob(ItemCreatedRS.newBuilder().setUuid(uuid).setMessage("OK").build(), c);
+			executorService.submit(task);
+		});
+	}
+
+	@Override
+	public Uni<OperationCompletionRS> finishTestItem(FinishTestItemRQ request) {
+		return Uni.createFrom().emitter(c->{
+			var uuid = request.getUuid();
+			Runnable task = createJob(OperationCompletionRS.newBuilder().setUuid(uuid).setMessage("OK").build(), c);
+			executorService.submit(task);
+		});
+	}
+
+	@Override
+	public Multi<ItemCreatedRS> startTestItemStream(Multi<StartTestItemRQ> request) {
 		return Multi.createFrom().emitter(c -> request.subscribe().with(rq -> {
 			var uuid = rq.getUuid();
 			Runnable task = createJob(ItemCreatedRS.newBuilder().setUuid(uuid).setMessage("OK").build(), c);
@@ -73,7 +103,7 @@ public class ReportPortalReportingService implements ReportPortalReporting {
 	}
 
 	@Override
-	public Multi<OperationCompletionRS> finishTestItem(Multi<FinishTestItemRQ> request) {
+	public Multi<OperationCompletionRS> finishTestItemStream(Multi<FinishTestItemRQ> request) {
 		return Multi.createFrom().emitter(c -> request.subscribe().with(rq -> {
 			var uuid = rq.getUuid();
 			Runnable task = createJob(OperationCompletionRS.newBuilder().setUuid(uuid).setMessage("OK").build(), c);
