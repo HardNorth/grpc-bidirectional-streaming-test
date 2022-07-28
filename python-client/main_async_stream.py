@@ -78,13 +78,13 @@ class ReportPortalClient:
         self.client = reportportal_pb2_grpc.ReportPortalReportingStub(
             self.channel)
         start_item_request_gen = self.test_item_gen(self.start_item_queue)
-        start_item_response_gen = self.client.StartTestItem(
+        start_item_response_gen = self.client.StartTestItemStream(
             start_item_request_gen, wait_for_ready=True)
         self.generator_tracker.put(self.loop.create_task(self.test_item_track(
             start_item_response_gen, 'Item started: ',
             self.item_start_tracker)))
         finish_item_request_gen = self.test_item_gen(self.finish_item_queue)
-        finish_item_response_gen = self.client.FinishTestItem(
+        finish_item_response_gen = self.client.FinishTestItemStream(
             finish_item_request_gen, wait_for_ready=True)
         self.generator_tracker.put(self.loop.create_task(
             self.test_item_track(finish_item_response_gen,

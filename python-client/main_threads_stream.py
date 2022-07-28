@@ -77,11 +77,12 @@ def run(item_number):
         launch_start_rs = stub.StartLaunch(start_launch_rq)
         logger.debug('Launch started: ' + launch_start_rs.uuid)
 
-        item_start_rs_stream = stub.StartTestItem(start_test_item_gen(),
-                                                  wait_for_ready=True)
+        item_start_rs_stream = stub.StartTestItemStream(start_test_item_gen(),
+                                                        wait_for_ready=True)
 
-        item_finish_rs_stream = stub.FinishTestItem(finish_test_item_gen(),
-                                                    wait_for_ready=True)
+        item_finish_rs_stream = stub.FinishTestItemStream(
+            finish_test_item_gen(),
+            wait_for_ready=True)
 
         start_rs_tracker = ResponseTracker()
         finish_rs_tracker = ResponseTracker()
