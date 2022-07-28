@@ -15,6 +15,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ReportPortalReportingApp {
 
@@ -64,6 +65,9 @@ public class ReportPortalReportingApp {
 
 	public static class ReportingApp {
 
+		private final AtomicInteger itemStarted = new AtomicInteger();
+		private final AtomicInteger itemFinished = new AtomicInteger();
+
 		private final ManagedChannel channel = ManagedChannelBuilder.forAddress("localhost", 9000)
 				.usePlaintext()
 				.build();
@@ -78,26 +82,28 @@ public class ReportPortalReportingApp {
 		private final BlockingQueue<FinishTestItemRQ> itemFinishQueue = new LinkedBlockingQueue<>();
 
 		private void logLaunch(StartLaunchRS response) {
-			System.out.println("Launch started: " + response.getUuid());
+//			System.out.println("Launch started: " + response.getUuid());
 		}
 
 		private void logItemStart(ItemCreatedRS response) {
-			System.out.println("Item started: " + response.getUuid());
+			itemStarted.incrementAndGet();
+//			System.out.println("Item started: " + response.getUuid());
 		}
 
 		private void logCompletion(OperationCompletionRS response) {
-			System.out.println("Item finished: " + response.getUuid());
+			itemFinished.incrementAndGet();
+//			System.out.println("Item finished: " + response.getUuid());
 		}
 
 		private void logLaunchCompletion(OperationCompletionRS response) {
-			System.out.println("Launch finished: " + response.getUuid());
+//			System.out.println("Launch finished: " + response.getUuid());
 		}
 
 		private void logError(Throwable throwable) {
 			throwable.printStackTrace();
 		}
 
-		public void run() throws InterruptedException {
+		public void run(int number) throws InterruptedException {
 			System.out.println("Starting test");
 			String launchUuid = UUID.randomUUID().toString();
 			Cancellable startLaunchSubscriber = rpService.startLaunch(StartLaunchRQ.newBuilder()
@@ -117,7 +123,7 @@ public class ReportPortalReportingApp {
 					.subscribe()
 					.with(this::logCompletion, this::logError);
 
-			for (int i = 0; i < 50; i++) {
+			for (int i = 0; i < number; i++) {
 				String itemUuid = i + "-" + UUID.randomUUID();
 				itemStartQueue.add(StartTestItemRQ.newBuilder().setUuid(itemUuid).build());
 				itemFinishQueue.add(FinishTestItemRQ.newBuilder()
@@ -126,28 +132,31 @@ public class ReportPortalReportingApp {
 						.build());
 			}
 
-			Thread.sleep(9000);
-
 			Cancellable finishLaunchSubscriber = rpService.finishLaunch(FinishExecutionRQ.newBuilder()
 					.setUuid(launchUuid)
 					.build()).subscribe().with(this::logLaunchCompletion, this::logError);
 
+			while (itemStarted.get() < number || itemFinished.get() < number) {
+				try {
+					Thread.sleep(10);
+				} catch (InterruptedException e) {
+					break;
+				}
+			}
+
 			System.out.println("Test finished");
 
-			Thread.sleep(100);
 			startLaunchSubscriber.cancel();
 			startSubscriber.cancel();
 			finishSubscriber.cancel();
 			finishLaunchSubscriber.cancel();
 			channel.shutdown();
-			if (!channel.awaitTermination(5, TimeUnit.SECONDS)) {
-				System.out.println("Unable to shut down channel");
-				channel.shutdownNow();
-			}
 		}
 	}
 
 	public static void main(String... args) throws Exception {
-		new ReportingApp().run();
+		long startTime = System.currentTimeMillis();
+		new ReportingApp().run(50000);
+		System.out.printf("Finishing the test. Took: %f seconds%n", (System.currentTimeMillis() - startTime) / 1000f);
 	}
 }
