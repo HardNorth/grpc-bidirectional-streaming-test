@@ -77,16 +77,13 @@ async def run(item_number):
             reportportal_pb2.StartLaunchRQ(uuid=launch_uuid,
                                            name='Test Launch'))
 
-        coroutines = []
         for i in range(item_number):
             item_uuid = str(i) + "-" + str(uuid.uuid4())
-            coroutines.append(client.start_item(
+            asyncio.create_task(client.start_item(
                 reportportal_pb2.StartTestItemRQ(uuid=item_uuid)))
-            coroutines.append(client.finish_item(
+            asyncio.create_task(client.finish_item(
                 reportportal_pb2.FinishTestItemRQ(
                     uuid=item_uuid, status=reportportal_pb2.PASSED)))
-
-        await asyncio.gather(*coroutines)
 
         finish_launch_rq = reportportal_pb2.FinishExecutionRQ(uuid=launch_uuid)
         await client.finish_launch(finish_launch_rq)
