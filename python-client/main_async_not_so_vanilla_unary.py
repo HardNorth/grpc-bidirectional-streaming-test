@@ -65,6 +65,11 @@ class ReportPortalClient:
         logger.debug('Item finished:' + response.uuid)
 
 
+def coro_gen(loop, coroutines):
+    for coro in coroutines:
+        yield loop.create_task(coro)
+
+
 async def run(item_number):
     async with ReportPortalClient('localhost:9000') as client:
         launch_uuid = str(uuid.uuid4())
@@ -75,16 +80,13 @@ async def run(item_number):
         coroutines = []
         for i in range(item_number):
             item_uuid = str(i) + "-" + str(uuid.uuid4())
-            request_coroutine = client.start_item(
-                reportportal_pb2.StartTestItemRQ(uuid=item_uuid))
-            response_coroutine = client.finish_item(
+            coroutines.append(client.start_item(
+                reportportal_pb2.StartTestItemRQ(uuid=item_uuid)))
+            coroutines.append(client.finish_item(
                 reportportal_pb2.FinishTestItemRQ(
-                    uuid=item_uuid, status=reportportal_pb2.PASSED))
-            coroutines.append((request_coroutine, response_coroutine))
+                    uuid=item_uuid, status=reportportal_pb2.PASSED)))
 
-        for item in coroutines:
-            await item[0]
-            await item[1]
+        await asyncio.gather(*coroutines)
 
         finish_launch_rq = reportportal_pb2.FinishExecutionRQ(uuid=launch_uuid)
         await client.finish_launch(finish_launch_rq)
@@ -93,7 +95,7 @@ async def run(item_number):
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
     start_time = time.time()
-    asyncio.run(run(50))
+    asyncio.run(run(50000))
     logger.info('Finishing the test. Took: {} seconds'.format(
         time.time() - start_time))
     logger.info('Total thread number: ' + str(len(threading.enumerate())))
