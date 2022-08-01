@@ -120,9 +120,11 @@ def run(item_number):
 
 
 if __name__ == '__main__':
+    test_number = 50000
     logging.basicConfig(level=logging.INFO)
     start_time = time.time()
-    run(50000)
-    logger.info('Finishing the test. Took: {} seconds'.format(
-        time.time() - start_time))
+    run(test_number)
+    logger.info(
+        'Finishing the test of {} items. Took: {} seconds'
+        .format(test_number, time.time() - start_time))
     logger.info('Total thread number: ' + str(len(threading.enumerate())))
