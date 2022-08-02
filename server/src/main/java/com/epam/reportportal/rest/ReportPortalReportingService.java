@@ -1,19 +1,20 @@
-package com.epam.reportportal.grpc;
+package com.epam.reportportal.rest;
 
 import com.epam.reportportal.grpc.model.*;
-import io.quarkus.grpc.GrpcService;
-import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.subscription.MultiEmitter;
 import io.smallrye.mutiny.subscription.UniEmitter;
 
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 
-@GrpcService
-public class ReportPortalReportingService implements ReportPortalReporting {
+@Path("/api")
+public class ReportPortalReportingService {
 
 	private static final AtomicLong LAUNCH_COUNTER = new AtomicLong();
 
@@ -26,7 +27,8 @@ public class ReportPortalReportingService implements ReportPortalReporting {
 		return t;
 	});
 
-	@Override
+	@POST
+	@Path("/launch")
 	public Uni<StartLaunchRS> startLaunch(StartLaunchRQ request) {
 		try {
 			Thread.sleep(new Random().nextInt(100));
@@ -41,7 +43,8 @@ public class ReportPortalReportingService implements ReportPortalReporting {
 						.build());
 	}
 
-	@Override
+	@PUT
+	@Path("/launch")
 	public Uni<OperationCompletionRS> finishLaunch(FinishExecutionRQ request) {
 		try {
 			Thread.sleep(new Random().nextInt(50));
@@ -75,49 +78,23 @@ public class ReportPortalReportingService implements ReportPortalReporting {
 		};
 	}
 
-	@Override
+	@POST
+	@Path("/item")
 	public Uni<ItemCreatedRS> startTestItem(StartTestItemRQ request) {
-		return Uni.createFrom().emitter(c->{
+		return Uni.createFrom().emitter(c -> {
 			var uuid = request.getUuid();
 			Runnable task = createJob(ItemCreatedRS.newBuilder().setUuid(uuid).setMessage("OK").build(), c);
 			executorService.submit(task);
 		});
 	}
 
-	@Override
+	@PUT
+	@Path("/item")
 	public Uni<OperationCompletionRS> finishTestItem(FinishTestItemRQ request) {
-		return Uni.createFrom().emitter(c->{
+		return Uni.createFrom().emitter(c -> {
 			var uuid = request.getUuid();
 			Runnable task = createJob(OperationCompletionRS.newBuilder().setUuid(uuid).setMessage("OK").build(), c);
 			executorService.submit(task);
 		});
-	}
-
-	@Override
-	public Uni<OperationCompletionRS> upload(EntityRQ request) {
-		return null;
-	}
-
-	@Override
-	public Multi<ItemCreatedRS> startTestItemStream(Multi<StartTestItemRQ> request) {
-		return Multi.createFrom().emitter(c -> request.subscribe().with(rq -> {
-			var uuid = rq.getUuid();
-			Runnable task = createJob(ItemCreatedRS.newBuilder().setUuid(uuid).setMessage("OK").build(), c);
-			executorService.submit(task);
-		}));
-	}
-
-	@Override
-	public Multi<OperationCompletionRS> finishTestItemStream(Multi<FinishTestItemRQ> request) {
-		return Multi.createFrom().emitter(c -> request.subscribe().with(rq -> {
-			var uuid = rq.getUuid();
-			Runnable task = createJob(OperationCompletionRS.newBuilder().setUuid(uuid).setMessage("OK").build(), c);
-			executorService.submit(task);
-		}));
-	}
-
-	@Override
-	public Multi<OperationCompletionRS> uploadStream(Multi<EntityRQ> request) {
-		return null;
 	}
 }
