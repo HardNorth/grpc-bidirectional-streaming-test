@@ -8,63 +8,75 @@ option objc_class_prefix = "RPP";
 package com.epam.reportportal.grpc.model;
 
 service ReportPortalReporting {
-    rpc StartLaunch (StartLaunchRQ) returns (StartLaunchRS) {}
-    rpc FinishLaunch(FinishExecutionRQ) returns (OperationCompletionRS) {}
-    rpc StartTestItemStream (stream StartTestItemRQ) returns (stream ItemCreatedRS) {}
-    rpc FinishTestItemStream(stream FinishTestItemRQ) returns (stream OperationCompletionRS) {}
-    rpc StartTestItem (StartTestItemRQ) returns (ItemCreatedRS) {}
-    rpc FinishTestItem(FinishTestItemRQ) returns (OperationCompletionRS) {}
+  rpc StartLaunch (StartLaunchRQ) returns (StartLaunchRS) {}
+  rpc FinishLaunch(FinishExecutionRQ) returns (OperationCompletionRS) {}
+  rpc StartTestItemStream (stream StartTestItemRQ) returns (stream ItemCreatedRS) {}
+  rpc FinishTestItemStream(stream FinishTestItemRQ) returns (stream OperationCompletionRS) {}
+  rpc StartTestItem (StartTestItemRQ) returns (ItemCreatedRS) {}
+  rpc FinishTestItem(FinishTestItemRQ) returns (OperationCompletionRS) {}
+
+  rpc Upload(EntityRQ) returns (OperationCompletionRS) {}
+  rpc UploadStream(stream EntityRQ) returns (stream OperationCompletionRS) {}
+}
+
+message EntityRQ {
+  oneof payload {
+    StartLaunchRQ start_launch_rq = 1;
+    FinishExecutionRQ finish_launch_rq = 2;
+    StartTestItemRQ start_item_rq = 3;
+    FinishTestItemRQ finish_item_rq = 4;
+  }
 }
 
 message StartLaunchRQ {
-    string name = 1;
-    string uuid = 2;
+  string name = 1;
+  string uuid = 2;
 }
 
 message StartLaunchRS {
-    string uuid = 1;
-    string message = 2;
-    sint64 number = 3;
+  string uuid = 1;
+  string message = 2;
+  sint64 number = 3;
 }
 
 message FinishExecutionRQ {
-    string uuid = 1;
+  string uuid = 1;
 }
 
 message OperationCompletionRS {
-    string uuid = 1;
-    string message = 2;
+  string uuid = 1;
+  string message = 2;
 }
 
 message PathElement {
-    string name = 1;
-    PathElementType type = 2;
+  string name = 1;
+  PathElementType type = 2;
 }
 
 enum PathElementType {
-    SUITE = 0;
-    SCENARIO = 1;
-    FEATURE = 2;
-    TEST = 3;
+  SUITE = 0;
+  SCENARIO = 1;
+  FEATURE = 2;
+  TEST = 3;
 }
 
 message StartTestItemRQ {
-    string uuid = 1;
-    repeated PathElement path = 2;
+  string uuid = 1;
+  repeated PathElement path = 2;
 }
 
 message ItemCreatedRS {
-    string uuid = 1;
-    string message = 2;
+  string uuid = 1;
+  string message = 2;
 }
 
 enum ItemStatus {
-    PASSED = 0;
-    FAILED = 1;
-    SKIPPED = 2;
+  PASSED = 0;
+  FAILED = 1;
+  SKIPPED = 2;
 }
 
 message FinishTestItemRQ {
-    string uuid = 1;
-    ItemStatus status = 2;
+  string uuid = 1;
+  ItemStatus status = 2;
 }
