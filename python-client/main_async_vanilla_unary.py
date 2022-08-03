@@ -12,22 +12,6 @@ from reportportal_grpc_client.client import reportportal_pb2_grpc, \
 logger = logging.getLogger(__name__)
 
 
-class ResponseTracker:
-    def __init__(self):
-        self.items = dict()
-
-    def acknowledge(self, item):
-        if len(self.items) > 0:
-            if item in self.items.keys():
-                del self.items[item]
-
-    def size(self):
-        return len(self.items)
-
-    def track(self, item):
-        self.items[item] = True
-
-
 # noinspection PyCompatibility
 class ReportPortalClient:
 
