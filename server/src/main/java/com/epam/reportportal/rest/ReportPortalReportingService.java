@@ -2,7 +2,6 @@ package com.epam.reportportal.rest;
 
 import com.epam.reportportal.grpc.model.*;
 import io.smallrye.mutiny.Uni;
-import io.smallrye.mutiny.subscription.MultiEmitter;
 import io.smallrye.mutiny.subscription.UniEmitter;
 
 import javax.ws.rs.POST;
@@ -64,17 +63,6 @@ public class ReportPortalReportingService {
 				emitter.fail(e);
 			}
 			emitter.complete(response);
-		};
-	}
-
-	private static <T> Runnable createJob(T response, MultiEmitter<? super T> emitter) {
-		return () -> {
-			try {
-				Thread.sleep(new Random().nextInt(200));
-			} catch (InterruptedException e) {
-				emitter.fail(e);
-			}
-			emitter.emit(response);
 		};
 	}
 
