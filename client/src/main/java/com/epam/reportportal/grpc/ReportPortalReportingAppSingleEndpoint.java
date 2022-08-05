@@ -19,9 +19,9 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class ReportPortalReportingApp {
+public class ReportPortalReportingAppSingleEndpoint {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(ReportPortalReportingApp.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(ReportPortalReportingAppSingleEndpoint.class);
 
 	public static class ThreadedPublisher<T> extends Thread implements Subscription, Publisher<T> {
 
@@ -69,8 +69,7 @@ public class ReportPortalReportingApp {
 
 	public static class ReportingApp {
 
-		private final AtomicInteger itemStarted = new AtomicInteger();
-		private final AtomicInteger itemFinished = new AtomicInteger();
+		private final AtomicInteger itemProcessed = new AtomicInteger();
 
 		private final ManagedChannel channel = ManagedChannelBuilder.forAddress("localhost", 9000)
 				.usePlaintext()
@@ -81,26 +80,19 @@ public class ReportPortalReportingApp {
 				(n, c) -> c.withWaitForReady()
 		);
 
-		private final BlockingQueue<StartTestItemRQ> itemStartQueue = new LinkedBlockingQueue<>();
-
-		private final BlockingQueue<FinishTestItemRQ> itemFinishQueue = new LinkedBlockingQueue<>();
+		private final BlockingQueue<EntityRQ> entryQueue = new LinkedBlockingQueue<>();
 
 		private void logLaunch(StartLaunchRS response) {
-			LOGGER.debug("Launch started: " + response.getUuid());
-		}
-
-		private void logItemStart(ItemCreatedRS response) {
-			itemStarted.incrementAndGet();
-			LOGGER.debug("Item started: " + response.getUuid());
+			LOGGER.info("Launch started: " + response.getUuid());
 		}
 
 		private void logCompletion(OperationCompletionRS response) {
-			itemFinished.incrementAndGet();
-			LOGGER.debug("Item finished: " + response.getUuid());
+			itemProcessed.incrementAndGet();
+			LOGGER.info(response.getType() + " Item finished: " + response.getUuid());
 		}
 
 		private void logLaunchCompletion(OperationCompletionRS response) {
-			LOGGER.debug("Launch finished: " + response.getUuid());
+			LOGGER.info("Launch finished: " + response.getUuid());
 		}
 
 		private void logError(Throwable throwable) {
@@ -108,31 +100,28 @@ public class ReportPortalReportingApp {
 		}
 
 		public void run(int number) {
-			LOGGER.info("Starting test");
+			LOGGER.warn("Starting test");
 			String launchUuid = UUID.randomUUID().toString();
 			Cancellable startLaunchSubscriber = rpService.startLaunch(StartLaunchRQ.newBuilder()
 					.setUuid(launchUuid)
 					.setName("Test Launch")
 					.build()).subscribe().with(this::logLaunch, this::logError);
 
-			ThreadedPublisher<StartTestItemRQ> startPublisher = new ThreadedPublisher<>(itemStartQueue);
-			Multi<StartTestItemRQ> startEmitter = Multi.createFrom().publisher(startPublisher);
-			Cancellable startSubscriber = rpService.startTestItemStream(startEmitter)
-					.subscribe()
-					.with(this::logItemStart, this::logError);
-
-			ThreadedPublisher<FinishTestItemRQ> finishPublisher = new ThreadedPublisher<>(itemFinishQueue);
-			Multi<FinishTestItemRQ> finishEmitter = Multi.createFrom().publisher(finishPublisher);
-			Cancellable finishSubscriber = rpService.finishTestItemStream(finishEmitter)
+			ThreadedPublisher<EntityRQ> entryPublisher = new ThreadedPublisher<>(entryQueue);
+			Multi<EntityRQ> entryEmitter = Multi.createFrom().publisher(entryPublisher);
+			Cancellable itemSubscriber = rpService.uploadStream(entryEmitter)
 					.subscribe()
 					.with(this::logCompletion, this::logError);
 
 			for (int i = 0; i < number; i++) {
 				String itemUuid = i + "-" + UUID.randomUUID();
-				itemStartQueue.add(StartTestItemRQ.newBuilder().setUuid(itemUuid).build());
-				itemFinishQueue.add(FinishTestItemRQ.newBuilder()
+				entryQueue.add(EntityRQ.newBuilder()
 						.setUuid(itemUuid)
-						.setStatus(ItemStatus.PASSED)
+						.setStartItemRq(StartTestItemRQ.newBuilder().setUuid(itemUuid).build())
+						.build());
+				entryQueue.add(EntityRQ.newBuilder()
+						.setUuid(itemUuid)
+						.setFinishItemRq(FinishTestItemRQ.newBuilder().setUuid(itemUuid).build())
 						.build());
 			}
 
@@ -140,29 +129,27 @@ public class ReportPortalReportingApp {
 					.setUuid(launchUuid)
 					.build()).subscribe().with(this::logLaunchCompletion, this::logError);
 
-			while (itemStarted.get() < number || itemFinished.get() < number) {
+			while (itemProcessed.get() < number) {
 				try {
-					Thread.sleep(10);
+					Thread.sleep(1);
 				} catch (InterruptedException e) {
 					break;
 				}
 			}
 
-			LOGGER.info("Test finished");
+			LOGGER.warn("Test finished");
 
 			startLaunchSubscriber.cancel();
-			startSubscriber.cancel();
-			finishSubscriber.cancel();
+			itemSubscriber.cancel();
 			finishLaunchSubscriber.cancel();
 			channel.shutdown();
 		}
 	}
 
-	public static void main(String... args) throws Exception {
+	public static void main(String... args) {
 		long startTime = System.currentTimeMillis();
-		new ReportingApp().run(50000);
-		LOGGER.info(String.format(
-				"Finishing the test. Took: %f seconds%n",
+		new ReportingApp().run(50);
+		LOGGER.warn(String.format("Finishing the test. Took: %f seconds%n",
 				(System.currentTimeMillis() - startTime) / 1000f
 		));
 	}

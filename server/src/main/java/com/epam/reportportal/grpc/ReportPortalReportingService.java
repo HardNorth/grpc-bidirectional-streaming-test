@@ -77,7 +77,7 @@ public class ReportPortalReportingService implements ReportPortalReporting {
 
 	@Override
 	public Uni<ItemCreatedRS> startTestItem(StartTestItemRQ request) {
-		return Uni.createFrom().emitter(c->{
+		return Uni.createFrom().emitter(c -> {
 			var uuid = request.getUuid();
 			Runnable task = createJob(ItemCreatedRS.newBuilder().setUuid(uuid).setMessage("OK").build(), c);
 			executorService.submit(task);
@@ -86,7 +86,7 @@ public class ReportPortalReportingService implements ReportPortalReporting {
 
 	@Override
 	public Uni<OperationCompletionRS> finishTestItem(FinishTestItemRQ request) {
-		return Uni.createFrom().emitter(c->{
+		return Uni.createFrom().emitter(c -> {
 			var uuid = request.getUuid();
 			Runnable task = createJob(OperationCompletionRS.newBuilder().setUuid(uuid).setMessage("OK").build(), c);
 			executorService.submit(task);
@@ -95,7 +95,11 @@ public class ReportPortalReportingService implements ReportPortalReporting {
 
 	@Override
 	public Uni<OperationCompletionRS> upload(EntityRQ request) {
-		return null;
+		return Uni.createFrom().emitter(c -> {
+			var uuid = request.getUuid();
+			Runnable task = createJob(OperationCompletionRS.newBuilder().setUuid(uuid).setMessage("OK").build(), c);
+			executorService.submit(task);
+		});
 	}
 
 	@Override
@@ -118,6 +122,15 @@ public class ReportPortalReportingService implements ReportPortalReporting {
 
 	@Override
 	public Multi<OperationCompletionRS> uploadStream(Multi<EntityRQ> request) {
-		return null;
+		return Multi.createFrom().emitter(c -> request.subscribe().with(rq -> {
+			var uuid = rq.getUuid();
+			var payloadCase = rq.getPayloadCase();
+			Runnable task = createJob(OperationCompletionRS.newBuilder()
+					.setType(payloadCase.name())
+					.setUuid(uuid)
+					.setMessage("OK")
+					.build(), c);
+			executorService.submit(task);
+		}));
 	}
 }
